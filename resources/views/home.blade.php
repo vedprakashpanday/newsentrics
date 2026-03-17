@@ -1,0 +1,253 @@
+@extends('layouts.frontend')
+
+@section('title', 'Newsentric - Live ' . $country . ' News & AI Insights')
+@section('meta_description', 'Read the latest trending news and AI-generated insights for ' . $country . ' on Newsentric.')
+@section('meta_keywords', 'latest news, ' . $country . ' news, AI news, trending')
+
+@section('content')
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 border-b-2 border-black pb-8 mb-10 mt-4">
+    
+    <div class="lg:col-span-1 flex flex-col gap-4 lg:border-r border-slate-200 lg:pr-6">
+        <div class="flex items-center gap-2 border-b-2 border-red-600 pb-1 mb-2">
+            <div class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
+            <h3 class="font-black uppercase text-sm tracking-widest text-slate-900">Latest Updates</h3>
+        </div>
+        
+        @foreach($latestNews as $lNews)
+            <article class="relative border-b border-slate-100 pb-4 last:border-0 group">
+                <span class="relative z-10 text-[10px] font-bold text-blue-600 uppercase tracking-wider block mb-1">
+                    {{ $lNews->category->name ?? 'News Update' }}
+                </span>
+                <h4 class="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition">
+                    <a href="{{ route('news.show', $lNews->slug) }}" class="before:absolute before:inset-0 z-0">
+                        {{ $lNews->title }}
+                    </a>
+                </h4>
+            </article>
+        @endforeach
+    </div>
+
+    <div class="lg:col-span-2 lg:px-4 flex flex-col">
+        @if($heroNews)
+            <div class="flex items-center gap-3 mb-3">
+                <span class="bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider">Breaking News</span>
+                <span class="text-xs font-bold text-slate-500 uppercase">{{ $heroNews->category->name ?? 'Top Story' }}</span>
+            </div>
+            
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight mb-4 hover:text-blue-600 transition">
+                <a href="{{ route('news.show', $heroNews->slug) }}">
+                    {{ $heroNews->title }}
+                </a>
+            </h1>
+            
+            <p class="text-slate-600 mb-6 text-base sm:text-lg leading-relaxed line-clamp-3">
+                {{ Str::limit(strip_tags($heroNews->content), 200) }}
+            </p>
+            
+           <div class="w-full aspect-[16/9] bg-slate-100 overflow-hidden mt-auto">
+                <a href="{{ route('news.show', $heroNews->slug) }}" class="block w-full h-full group">
+                    @if($heroNews->image)
+                        <img src="{{ asset('uploads/news/' . $heroNews->image) }}" alt="{{ $heroNews->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    @else
+                        <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 text-slate-400 group-hover:bg-slate-200 transition duration-500">
+                            <svg class="w-16 h-16 mb-3 text-slate-300 group-hover:text-blue-400 group-hover:scale-110 transition duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="text-sm font-bold uppercase tracking-widest text-slate-400 group-hover:text-blue-500 transition duration-500">View Article</span>
+                        </div>
+                    @endif
+                </a>
+            </div>
+        @endif
+    </div>
+
+ <div class="lg:col-span-1 lg:border-l border-slate-200 lg:pl-6 pt-6 lg:pt-0">
+        <div class="sticky top-24">
+            
+            <div class="bg-slate-900 text-white p-5 mb-5 border-b-4 border-blue-500 shadow-md">
+                <div id="live-time" class="text-3xl font-black tracking-tighter mb-1 text-center font-mono">00:00:00</div>
+                <div id="live-date" class="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Loading Date...</div>
+            </div>
+
+            <div class="bg-white border border-slate-200 p-5 mb-6 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+
+                <div class="mb-4">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Today in History
+                    </h4>
+                    
+                    <div id="ai-history-loader" class="animate-pulse flex flex-col gap-2">
+                        <div class="h-3 bg-slate-200 w-3/4"></div>
+                        <div class="h-2 bg-slate-200 w-full"></div>
+                        <div class="h-2 bg-slate-200 w-5/6"></div>
+                    </div>
+                    
+                    <div id="ai-history-content" class="hidden">
+                        <h5 id="history-title" class="font-bold text-slate-800 text-sm mb-1 leading-snug"></h5>
+                        <p id="history-info" class="text-xs text-slate-600 leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <hr class="border-slate-100 mb-4">
+
+                <div>
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        AI Insight
+                    </h4>
+                    <div id="ai-quote-loader" class="animate-pulse h-8 bg-slate-200 w-full"></div>
+                    <p id="ai-quote-content" class="hidden text-sm font-semibold text-slate-700 italic border-l-2 border-blue-500 pl-3 py-1"></p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 h-[250px] flex flex-col justify-center items-center text-slate-400 p-4 shadow-inner mb-6">
+                <span class="text-[10px] uppercase font-bold tracking-widest mb-2">Advertisement</span>
+                <span class="text-center text-sm font-semibold">Square Ad<br>(300x250)</span>
+            </div>
+            
+        </div>
+    </div>
+    
+</div>
+
+<div class="w-full mb-10">
+    <div class="bg-slate-50 border border-slate-200 py-6 flex flex-col items-center justify-center text-slate-400 hidden sm:flex">
+        <span class="text-[10px] font-bold uppercase tracking-widest mb-1">Advertisement</span>
+        <span class="text-sm font-semibold">Leaderboard Banner (728x90)</span>
+    </div>
+</div>
+
+<div class="mb-6 border-b-2 border-black pb-2">
+    <h2 class="text-xl font-black text-slate-900 uppercase tracking-wide">More {{ $country }} Headlines</h2>
+</div>
+
+<div id="news-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+    @include('components.news-list', ['newsList' => $newsList])
+</div>
+
+<div class="w-full mt-10 mb-8">
+    <div class="bg-slate-50 border border-slate-200 py-8 flex flex-col items-center justify-center text-slate-400">
+        <span class="text-[10px] font-bold uppercase tracking-widest mb-1">Advertisement</span>
+        <span class="text-lg font-bold text-slate-300">Sponsored Feed Ad</span>
+    </div>
+</div>
+
+@if($newsList->hasMorePages())
+    <div class="text-center mt-8 mb-8">
+        <button id="load-more-btn" data-page="2" class="bg-slate-900 hover:bg-blue-600 text-white text-sm font-bold py-3 px-10 uppercase tracking-widest transition-all">
+            Load More News
+        </button>
+    </div>
+@else
+    <div class="text-center mt-12 mb-8 text-slate-500 font-medium">
+        You've reached the end of the latest updates!
+    </div>
+@endif
+
+@endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        // 1. IP Detection Update (URL parameters ke saath)
+        $('#globalCountrySelect').change(function() {
+            let selectedCountry = $(this).val();
+            localStorage.setItem('user_country', selectedCountry);
+            // Page reload with new country parameter
+            window.location.href = "?country=" + selectedCountry;
+        });
+
+        // 2. Load More Chunking Logic
+        $('#load-more-btn').click(function() {
+            let button = $(this);
+            let page = button.attr('data-page');
+            let country = "{{ $country }}"; // Current country
+            
+            button.html('<span class="spinner-border spinner-border-sm"></span> Loading...');
+
+            $.ajax({
+                url: "?country=" + country + "&page=" + page,
+                type: "GET",
+                success: function(response) {
+                    // Naye cards ko grid mein append karna
+                    $('#news-container').append(response.html);
+                    
+                    // Page number badhana
+                    button.attr('data-page', parseInt(page) + 1);
+                    button.html('Load More Stories');
+
+                    // Agar aur pages nahi hain toh button hide kar do
+                    if(!response.hasMore) {
+                        button.fadeOut();
+                        $('#news-container').after('<div class="text-center mt-8 text-slate-500 font-medium">You\'ve reached the end!</div>');
+                    }
+                },
+                error: function() {
+                    alert('Something went wrong. Please try again.');
+                    button.html('Load More Stories');
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        
+        // 1. LIVE DIGITAL CLOCK LOGIC
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            let timeString = hours + ':' + minutes + ':' + seconds + ' <span class="text-sm text-blue-400">' + ampm + '</span>';
+            $('#live-time').html(timeString);
+            
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            $('#live-date').text(now.toLocaleDateString('en-US', options));
+        }
+        
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call
+
+        // 2. BACKGROUND AI WIDGET FETCH
+        let userCountry = "{{ $country }}"; // Controller se aayi hui country
+        
+        $.ajax({
+            url: "/api/sidebar-ai",
+            type: "GET",
+            data: { country: userCountry },
+            success: function(response) {
+                // Loader chupa do
+                $('#ai-history-loader, #ai-quote-loader').hide();
+                
+                // Content bhar do
+                $('#history-title').text(response.history_title);
+                $('#history-info').text(response.history_info);
+                $('#ai-quote-content').text(response.quote);
+                
+                // Content dikha do with smooth fade-in
+                $('#ai-history-content, #ai-quote-content').fadeIn('slow').removeClass('hidden');
+            },
+            error: function() {
+                // Error aane par loaders hata do aur chupchap gayab kar do (taaki user ko error na dikhe)
+                $('#ai-history-loader, #ai-quote-loader').hide();
+                $('#history-title').text("Today in History");
+                $('#history-info').text("Unable to load live AI insights right now.");
+                $('#ai-history-content').fadeIn('slow').removeClass('hidden');
+            }
+        });
+        
+    });
+</script>
+@endpush
