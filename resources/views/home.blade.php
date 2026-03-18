@@ -1,10 +1,12 @@
 @extends('layouts.frontend')
 
-@section('title', 'Newsentric - Live ' . $country . ' News & AI Insights')
+@section('title', isset($query) ? 'Search Results for ' . $query : 'Newsentric - Live ' . $country . ' News & AI Insights')
 @section('meta_description', 'Read the latest trending news and AI-generated insights for ' . $country . ' on Newsentric.')
 @section('meta_keywords', 'latest news, ' . $country . ' news, AI news, trending')
 
 @section('content')
+
+@if(empty($query))
 
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 border-b-2 border-black pb-8 mb-10 mt-4">
     
@@ -120,12 +122,25 @@
     </div>
 </div>
 
+@endif
 <div class="mb-6 border-b-2 border-black pb-2">
-    <h2 class="text-xl font-black text-slate-900 uppercase tracking-wide">More {{ $country }} Headlines</h2>
+    <h2 class="text-xl font-black text-slate-900 uppercase tracking-wide">
+        @if(isset($query) && !empty($query))
+            Search Results for: <span class="text-blue-600">"{{ $query }}"</span>
+        @else
+            More {{ $country }} Headlines
+        @endif
+    </h2>
 </div>
 
 <div id="news-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-    @include('components.news-list', ['newsList' => $newsList])
+    @if($newsList->isEmpty() && isset($query) && !empty($query))
+        <div class="col-span-full py-12 text-center text-slate-500 font-medium">
+            No news found for "{{ $query }}". Try different keywords!
+        </div>
+    @else
+        @include('components.news-list', ['newsList' => $newsList])
+    @endif
 </div>
 
 <div class="w-full mt-10 mb-8">
@@ -156,7 +171,6 @@
         $('#globalCountrySelect').change(function() {
             let selectedCountry = $(this).val();
             localStorage.setItem('user_country', selectedCountry);
-            // Page reload with new country parameter
             window.location.href = "?country=" + selectedCountry;
         });
 
@@ -164,7 +178,7 @@
         $('#load-more-btn').click(function() {
             let button = $(this);
             let page = button.attr('data-page');
-            let country = "{{ $country }}"; // Current country
+            let country = "{{ $country }}"; 
             
             button.html('<span class="spinner-border spinner-border-sm"></span> Loading...');
 
@@ -172,14 +186,10 @@
                 url: "?country=" + country + "&page=" + page,
                 type: "GET",
                 success: function(response) {
-                    // Naye cards ko grid mein append karna
                     $('#news-container').append(response.html);
-                    
-                    // Page number badhana
                     button.attr('data-page', parseInt(page) + 1);
                     button.html('Load More Stories');
 
-                    // Agar aur pages nahi hain toh button hide kar do
                     if(!response.hasMore) {
                         button.fadeOut();
                         $('#news-container').after('<div class="text-center mt-8 text-slate-500 font-medium">You\'ve reached the end!</div>');
@@ -191,13 +201,8 @@
                 }
             });
         });
-    });
-</script>
 
-<script>
-    $(document).ready(function() {
-        
-        // 1. LIVE DIGITAL CLOCK LOGIC
+        // 3. LIVE DIGITAL CLOCK LOGIC
         function updateClock() {
             const now = new Date();
             let hours = now.getHours();
@@ -218,29 +223,23 @@
         }
         
         setInterval(updateClock, 1000);
-        updateClock(); // Initial call
+        updateClock(); 
 
-        // 2. BACKGROUND AI WIDGET FETCH
-        let userCountry = "{{ $country }}"; // Controller se aayi hui country
+        // 4. BACKGROUND AI WIDGET FETCH
+        let userCountry = "{{ $country }}"; 
         
         $.ajax({
             url: "/api/sidebar-ai",
             type: "GET",
             data: { country: userCountry },
             success: function(response) {
-                // Loader chupa do
                 $('#ai-history-loader, #ai-quote-loader').hide();
-                
-                // Content bhar do
                 $('#history-title').text(response.history_title);
                 $('#history-info').text(response.history_info);
                 $('#ai-quote-content').text(response.quote);
-                
-                // Content dikha do with smooth fade-in
                 $('#ai-history-content, #ai-quote-content').fadeIn('slow').removeClass('hidden');
             },
             error: function() {
-                // Error aane par loaders hata do aur chupchap gayab kar do (taaki user ko error na dikhe)
                 $('#ai-history-loader, #ai-quote-loader').hide();
                 $('#history-title').text("Today in History");
                 $('#history-info').text("Unable to load live AI insights right now.");

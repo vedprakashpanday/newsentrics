@@ -48,33 +48,66 @@ class NewsController extends Controller
     return view('admin.trending', compact('trends', 'country'));
 }
 
+
 public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
             'country' => 'required|string',
-            'category_id' => 'required|exists:categories,id', // Validation add kiya
+            'category_id' => 'required|exists:categories,id',
             'content' => 'required',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Mimes define kar diye
             'keywords' => 'nullable|string'
         ]);
 
-        // ... Image upload logic wahi rahega ...
+        $imageName = null;
 
+        // --- THE WEBP CONVERSION MAGIC ---
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            
+            // Naya naam .webp extension ke sath
+            $imageName = time() . '-' . uniqid() . '.webp'; 
+            $destinationPath = public_path('uploads/news');
+
+            // Agar folder nahi hai toh bana do
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            // Image ko memory mein load karo (kisi bhi format se)
+            $img = imagecreatefromstring(file_get_contents($image->getRealPath()));
+
+            // PNG images ki transparency (background) bachane ke liye
+            imagepalettetotruecolor($img);
+            imagealphablending($img, true);
+            imagesavealpha($img, true);
+
+            // Image ko WebP format mein save karo (80 quality best hoti hai web ke liye)
+            imagewebp($img, $destinationPath . '/' . $imageName, 80);
+
+            // Memory clear karo
+            imagedestroy($img);
+        }
+        // ---------------------------------
+
+        // SEO Friendly Slug Generate
         $slug = \Illuminate\Support\Str::slug($request->title) . '-' . time();
 
+        // Database mein save
         News::create([
-            'category_id' => $request->category_id, // Nayi line add ki
+            'category_id' => $request->category_id,
             'title' => $request->title,
             'slug' => $slug,
             'country' => $request->country,
-            'image' => $imageName ?? null,
+            'image' => $imageName, // Yahan ab convert hui WebP image ka naam jayega
             'content' => $request->content,
             'keywords' => $request->keywords,
         ]);
 
         return redirect()->back()->with('success', 'News published successfully!');
     }
+
 
 // Yeh function missing tha, ise ab add karein
   // Form dikhane wala function
@@ -85,44 +118,74 @@ public function create()
 }
 
  public function generateAIContent(Request $request) 
-{
-    try {
-        $keywords = $request->keywords;
-        $apiKey = trim(env('GEMINI_API_KEY')); 
+    {
+        try {
+            // Frontend se aane wala saara data catch karein
+            $roughTitle = $request->title ?? '';
+            $roughContent = $request->content ?? '';
+            $keywords = $request->keywords ?? '';
+            $country = $request->country ?? 'Global';
+            $category = $request->category ?? 'General News';
 
-        if (empty($apiKey)) {
-            return response()->json(['success' => false, 'message' => 'API Key is empty!']);
-        }
+            $apiKey = trim(env('GEMINI_API_KEY')); 
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
+            if (empty($apiKey)) {
+                return response()->json(['success' => false, 'message' => 'API Key is missing in .env file!']);
+            }
 
-        $response = \Illuminate\Support\Facades\Http::withoutVerifying()
-            ->withHeaders(['Content-Type' => 'application/json'])
-            ->post($url, [
-                'contents' => [
-                    ['parts' => [
-                        // YAHAN MAINE PROMPT BADAL DIYA HAI -> "Strictly in professional English"
-                        ['text' => "Write a professional and highly engaging news article strictly in English. Heading: [Catchy Title] Content: [Detailed News Body in pure English]. Use these keywords: " . $keywords . ". Return EXACTLY like this -> Heading: Your Title \n\n Content: Your Article"]
-                    ]]
-                ]
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
+
+            // AI ke liye ek strict "System Prompt" banayein
+            $prompt = "Act as an expert, professional news editor and journalist. I will provide you with rough news data, keywords, a target country, and a category. Your job is to rewrite this into a highly engaging, SEO-optimized, and professional news article strictly in English.
+
+            Target Audience Country: {$country}
+            News Category: {$category}
+            Rough Title/Idea: {$roughTitle}
+            Rough Content/Snippet: {$roughContent}
+            Keywords: {$keywords}
+
+            Output STRICTLY a valid JSON object with EXACTLY these three keys:
+            - \"title\": A catchy, professional, SEO-friendly headline (Max 100 characters).
+            - \"content\": The detailed, well-structured news article body. Write at least 3-4 professional paragraphs. Use HTML tags like <p>, <br>, or <strong> if necessary for formatting, but keep it clean.
+            - \"keywords\": A comma-separated list of the 5-8 best SEO keywords based on the article.";
+
+            $response = \Illuminate\Support\Facades\Http::withoutVerifying()
+                ->withHeaders(['Content-Type' => 'application/json'])
+                ->post($url, [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]]
+                    ],
+                    // MAGIC TRICK: AI ko bol rahe hain ki strictly JSON return kare, koi markdown (```json) nahi
+                    'generationConfig' => [
+                        'responseMimeType' => 'application/json',
+                    ]
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $aiJsonResponseString = $data['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
+                
+                // Gemini ne jo JSON string di hai, use PHP Array mein convert karo
+                $parsedData = json_decode($aiJsonResponseString, true);
+
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    // Agar JSON sahi se parse ho gaya, toh success true add karke frontend ko bhej do
+                    return response()->json(array_merge(['success' => true], $parsedData));
+                } else {
+                    return response()->json(['success' => false, 'message' => 'AI returned invalid JSON format.']);
+                }
+            }
+            
+            $errorData = $response->json();
+            $googleError = $errorData['error']['message'] ?? $response->body();
+
+            return response()->json([
+                'success' => false, 
+                'message' => 'Google API Error: ' . $googleError
             ]);
 
-        if ($response->successful()) {
-            $data = $response->json();
-            $aiText = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
-            return response()->json(['success' => true, 'text' => $aiText]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Server Error: ' . $e->getMessage()]);
         }
-        
-        $errorData = $response->json();
-        $googleError = $errorData['error']['message'] ?? $response->body();
-
-        return response()->json([
-            'success' => false, 
-            'message' => 'Google Error: ' . $googleError
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json(['success' => false, 'message' => 'Server Error: ' . $e->getMessage()]);
     }
-}
 }

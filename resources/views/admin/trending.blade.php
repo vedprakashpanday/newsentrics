@@ -119,11 +119,14 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
-    function openTrends(code) {
+    // window.openTrends lagane se function globally available ho jata hai
+    // jisse HTML ka onclick use direct dhoondh leta hai.
+    window.openTrends = function(code) {
         const url = `https://trends.google.com/trends/trendingsearches/daily?geo=${code}`;
-        // Mobile par popup ke bajaye window.open simple kaam karega
+        
+        // Mobile par popup ke bajaye new tab mein kholna behtar hai
         if(window.innerWidth < 768) {
             window.open(url, '_blank');
         } else {
@@ -133,6 +136,6 @@
             const top = (window.innerHeight - height) / 2;
             window.open(url, 'TrendsWindow', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
         }
-    }
+    };
 </script>
-@endsection
+@endpush

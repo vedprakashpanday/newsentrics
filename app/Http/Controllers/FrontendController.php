@@ -8,45 +8,25 @@ use App\Models\Comment;
 
 class FrontendController extends Controller
 {
-  public function index(Request $request)
+public function index(Request $request) 
     {
+        // 1. Country Set Karein
         $country = $request->country ?? 'India';
 
-        // 1. Center Column: Sabse latest (Hero) News
-        $heroNews = \App\Models\News::where('country', $country)
-                        ->orderBy('created_at', 'desc')
-                        ->first();
+        // 2. Normal Home Page Logic (Kyunki Search ab apne dedicated method se handle hoga)
+        $query = \App\Models\News::where('country', $country); // Country ke hisaab se filter
 
-        // 2. Left Column: Hero news ko chhod kar agli 5 taaza khabrein
-        $latestNews = \App\Models\News::where('country', $country)
-                        ->where('id', '!=', $heroNews ? $heroNews->id : 0)
-                        ->orderBy('created_at', 'desc')
-                        ->take(5)
-                        ->get();
-
-        // In 6 news (1 hero + 5 latest) ki IDs nikal lo taaki niche list me ye repeat na hon
-        $excludeIds = $latestNews->pluck('id')->toArray();
-        if ($heroNews) {
-            $excludeIds[] = $heroNews->id;
-        }
-
-        // 3. Bottom Grid: Baaki saari news chunking/pagination ke sath
-        $newsList = \App\Models\News::where('country', $country)
-                        ->whereNotIn('id', $excludeIds)
-                        ->orderBy('created_at', 'desc')
-                        ->paginate(6);
-
-        if ($request->ajax()) {
-            $html = view('components.news-list', compact('newsList'))->render();
-            return response()->json([
-                'html' => $html,
-                'hasMore' => $newsList->hasMorePages()
-            ]);
-        }
+        $heroNews = clone $query;
+        $heroNews = $heroNews->latest()->first();
+        
+        $latestNews = clone $query;
+        $latestNews = $latestNews->latest()->skip(1)->take(4)->get();
+        
+        $newsList = clone $query;
+        $newsList = $newsList->latest()->skip(5)->paginate(9);
 
         return view('home', compact('heroNews', 'latestNews', 'newsList', 'country'));
     }
-
    public function show($slug)
     {
         $news = News::where('slug', $slug)->firstOrFail();
@@ -103,91 +83,79 @@ class FrontendController extends Controller
         ]);
     }
 
-    public function category(Request $request, $slug)
-    {
-        $category = \App\Models\Category::where('slug', $slug)->firstOrFail();
-        $country = $request->country ?? 'India';
+  public function category(Request $request, $slug)
+{
+    $category = \App\Models\Category::where('slug', $slug)->firstOrFail();
+    $userCountry = $request->country ?? 'India';
 
-        // Us category ki sabse latest (Hero) news
-        $heroNews = \App\Models\News::where('category_id', $category->id)
-                        ->where('country', $country)
-                        ->orderBy('created_at', 'desc')
-                        ->first();
+    // Agar AJAX request hai (Load More dabaya gaya hai)
+    if ($request->ajax()) {
+        $type = $request->type; // 'local' ya 'world'
+        $skip = $request->skip;
 
-        // Us category ki agli 5 news
-        $latestNews = \App\Models\News::where('category_id', $category->id)
-                        ->where('country', $country)
-                        ->where('id', '!=', $heroNews ? $heroNews->id : 0)
-                        ->orderBy('created_at', 'desc')
-                        ->take(5)
-                        ->get();
+        $query = \App\Models\News::where('category_id', $category->id);
 
-        $excludeIds = $latestNews->pluck('id')->toArray();
-        if ($heroNews) {
-            $excludeIds[] = $heroNews->id;
+        if ($type == 'local') {
+            $query->where('country', $userCountry);
+        } else {
+            $query->where('country', '!=', $userCountry);
         }
 
-        // Us category ki baaki news (Grid ke liye)
-        $newsList = \App\Models\News::where('category_id', $category->id)
-                        ->where('country', $country)
-                        ->whereNotIn('id', $excludeIds)
-                        ->orderBy('created_at', 'desc')
-                        ->paginate(6);
-
-        if ($request->ajax()) {
-            $html = view('components.news-list', compact('newsList'))->render();
-            return response()->json(['html' => $html, 'hasMore' => $newsList->hasMorePages()]);
+        $extraNews = $query->latest()->skip($skip)->take(4)->get();
+        
+        // Naye cards ka HTML generate karke bhejna
+        $html = '';
+        foreach($extraNews as $news) {
+            $html .= view('components.news-card', compact('news'))->render();
         }
 
-        return view('home', compact('heroNews', 'latestNews', 'newsList', 'country', 'category'));
+        return response()->json([
+            'html' => $html,
+            'count' => $extraNews->count()
+        ]);
     }
+
+    // Normal Page Load Logic
+    $localNews = \App\Models\News::where('category_id', $category->id)->where('country', $userCountry)->latest()->take(8)->get();
+    $worldNews = \App\Models\News::where('category_id', $category->id)->where('country', '!=', $userCountry)->latest()->take(4)->get();
+
+    return view('category', compact('category', 'localNews', 'worldNews', 'userCountry'));
+}
+
 
    public function search(Request $request)
     {
         $query = $request->input('q');
         $country = $request->country ?? 'India';
 
-        // Search ka logic ek jagah likh liya taaki baar-baar na likhna pade
+        // 1. Search filter logic
         $searchLogic = function($q) use ($query) {
             $q->where('title', 'LIKE', "%{$query}%")
               ->orWhere('keywords', 'LIKE', "%{$query}%")
               ->orWhere('content', 'LIKE', "%{$query}%");
         };
 
-        // Search ki gayi sabse top news
-        $heroNews = \App\Models\News::where('country', $country)
-                        ->where($searchLogic)
-                        ->orderBy('created_at', 'desc')
-                        ->first();
-
-        // Search ki gayi agli 5 news
-        $latestNews = \App\Models\News::where('country', $country)
-                        ->where($searchLogic)
-                        ->where('id', '!=', $heroNews ? $heroNews->id : 0)
-                        ->orderBy('created_at', 'desc')
-                        ->take(5)
-                        ->get();
-
-        $excludeIds = $latestNews->pluck('id')->toArray();
-        if ($heroNews) {
-            $excludeIds[] = $heroNews->id;
-        }
-
-        // Search ki gayi baaki news
+        // 2. MAGIC FIX: Search ke time news ko Hero aur Latest mein todna nahi hai!
+        // Saari ki saari matched news ko sidha Grid ($newsList) mein daal do.
         $newsList = \App\Models\News::where('country', $country)
                         ->where($searchLogic)
-                        ->whereNotIn('id', $excludeIds)
                         ->orderBy('created_at', 'desc')
-                        ->paginate(6);
+                        ->paginate(12); // Search results page par 12 ka grid mast lagega
 
+        // AJAX pagination support
         if ($request->ajax()) {
             $html = view('components.news-list', compact('newsList'))->render();
             return response()->json(['html' => $html, 'hasMore' => $newsList->hasMorePages()]);
         }
 
+        // 3. View ko error se bachane ke liye Hero/Latest ko khali bhej do
+        $heroNews = null;
+        $latestNews = collect();
+
         return view('home', compact('heroNews', 'latestNews', 'newsList', 'country', 'query'));
     }
 
+    
     public function sidebarAiWidget(Request $request)
     {
         $country = $request->country ?? 'India';
