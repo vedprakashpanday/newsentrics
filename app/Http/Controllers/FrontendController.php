@@ -35,7 +35,7 @@ public function index(Request $request)
         // Sidebar ke liye Related News (4 items)
         $relatedNews = News::where('country', $news->country)
                            ->where('id', '!=', $news->id)
-                           ->orderBy('created_at', 'desc')
+                           ->orderBy('view_count', 'desc')
                            ->take(4)
                            ->get();
 

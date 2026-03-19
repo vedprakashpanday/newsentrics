@@ -188,4 +188,90 @@ public function create()
             return response()->json(['success' => false, 'message' => 'Server Error: ' . $e->getMessage()]);
         }
     }
+
+public function index()
+{
+    $allNews = \App\Models\News::with('category')->latest()->get();
+    return view('admin.manage_news', compact('allNews'));
+}
+
+public function edit($id)
+    {
+        // Pehle purani news dhoondho aur categories nikalo
+        $news = \App\Models\News::findOrFail($id);
+        $categories = \App\Models\Category::all();
+
+        // Edit form wala view return karo
+        return view('admin.edit', compact('news', 'categories'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $news = \App\Models\News::findOrFail($id);
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'country' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
+            'content' => 'required',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'keywords' => 'nullable|string'
+        ]);
+
+        // Default purani image ka naam rakho
+        $imageName = $news->image; 
+
+        // Agar user ne nayi image upload ki hai
+        if ($request->hasFile('image')) {
+            
+            // 🔴 Sabse Pehle: Purani image ko server se HATAO (Taaki storage bache)
+            if ($news->image && file_exists(public_path('uploads/news/' . $news->image))) {
+                unlink(public_path('uploads/news/' . $news->image));
+            }
+
+            // 🟢 Nayi image ko .webp mein convert karke save karo
+            $image = $request->file('image');
+            $imageName = time() . '-' . uniqid() . '.webp'; 
+            $destinationPath = public_path('uploads/news');
+
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            $img = imagecreatefromstring(file_get_contents($image->getRealPath()));
+            imagepalettetotruecolor($img);
+            imagealphablending($img, true);
+            imagesavealpha($img, true);
+            imagewebp($img, $destinationPath . '/' . $imageName, 80);
+            imagedestroy($img);
+        }
+
+        // Database Update karo
+        $news->update([
+            'category_id' => $request->category_id,
+            'title' => $request->title,
+            // Note: Hum 'slug' update nahi kar rahe taaki SEO aur purane links break na hon
+            'country' => $request->country,
+            'image' => $imageName, 
+            'content' => $request->content,
+            'keywords' => $request->keywords,
+        ]);
+
+        return redirect()->route('news.manage')->with('success', 'News updated successfully!');
+    }
+
+    public function destroy($id)
+    {
+        $news = \App\Models\News::findOrFail($id);
+
+        // 🔴 Pehle server folder se image delete karo
+        if ($news->image && file_exists(public_path('uploads/news/' . $news->image))) {
+            unlink(public_path('uploads/news/' . $news->image));
+        }
+
+        // 🔴 Fir database se news delete karo
+        $news->delete();
+
+        return redirect()->route('news.manage')->with('success', 'News and its image deleted successfully!');
+    }
 }
