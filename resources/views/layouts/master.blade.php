@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="@yield('meta_keywords')">
+    <link rel="icon" type="image/png" href="{{ asset('uploads/logo/newsentric.jpg') }}">
     <title>Newsentric Admin - @yield('title', 'Dashboard')</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -48,7 +49,7 @@
             .overlay.active { display: block; }
         }
     </style>
-    @yield('styles') 
+    @stack('styles') 
 </head>
 <body>
 
@@ -90,6 +91,46 @@
                 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}" href="{{ route('categories.index') }}">
         <i class="bi bi-tags me-2"></i> Categories
+    </a>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link {{ request()->is('admin/messages*') ? 'active' : '' }}" href="{{ route('admin.messages.index') }}">
+        <i class="bi bi-envelope-fill me-2"></i> Messages
+        @php $msgCount = \App\Models\Contact::count(); @endphp
+        @if($msgCount > 0)
+            <span class="badge bg-primary float-end">{{ $msgCount }}</span>
+        @endif
+    </a>
+</li>
+
+
+<li class="nav-item">
+    <a class="nav-link {{ request()->is('admin/comments*') ? 'active' : '' }}" href="{{ route('admin.comments.index') }}">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-chat-left-dots-fill me-2"></i> 
+                Comments
+            </div>
+            {{-- Ek chota sa badge jo dikhayega ki kitne comments Pending hain --}}
+            @php
+                $pendingCount = \App\Models\Comment::where('status', 0)->count();
+            @endphp
+            @if($pendingCount > 0)
+                <span class="badge rounded-pill bg-danger" style="font-size: 0.7rem;">
+                    {{ $pendingCount }}
+                </a>
+            @endif
+        </div>
+    </a>
+</li>
+
+
+
+<li class="nav-item">
+    <a class="nav-link" href="{{ route('pages.index') }}">
+        <i class="bi bi-file-earmark-text"></i>
+        <span>Manage Pages</span>
     </a>
 </li>
 

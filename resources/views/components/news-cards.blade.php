@@ -1,7 +1,7 @@
 <article class="bg-white border border-slate-200 rounded-lg overflow-hidden group hover:shadow-xl transition-all duration-300">
     <a href="{{ route('news.show', $news->slug) }}" class="block relative aspect-video overflow-hidden">
         @if($news->image)
-            <img src="{{ asset('uploads/news/' . $news->image) }}" alt="{{ $news->title }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+            <img src="{{ asset('uploads/news/' . $news->image) }}" alt="{{ $news->title }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" loading="lazy">
         @else
             <div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300 font-bold">Newsentric</div>
         @endif

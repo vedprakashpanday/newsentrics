@@ -53,9 +53,13 @@
             </article>
 
             <div class="w-full bg-slate-100 border border-slate-200 rounded-lg py-10 flex flex-col items-center justify-center mb-8 text-slate-400">
-                <span class="text-xs font-bold uppercase tracking-widest mb-1">Advertisement</span>
-                <span class="text-lg">Responsive Ad Block (In-Article)</span>
-            </div>
+    @if(isset($all_ads['in_article']))
+        {!! $all_ads['in_article'] !!}
+    @else
+        <span class="text-xs font-bold uppercase tracking-widest mb-1">Advertisement</span>
+        <span class="text-lg">Responsive Ad Block (In-Article)</span>
+    @endif
+</div>
 
             <article class="prose max-w-none text-slate-700 leading-relaxed mb-10 text-lg">
                {!! Illuminate\Support\Str::markdown($contentPart2) !!}
@@ -178,15 +182,23 @@
                 </div>
 
                 <div class="w-full h-[400px] bg-slate-100 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400">
-                    <span class="text-xs font-bold uppercase tracking-widest mb-1">Advertisement</span>
-                    <span class="text-center px-4">Sidebar Ad Block<br>(300x400)</span>
-                </div>
+    @if(isset($all_ads['sidebar_tall']))
+        {!! $all_ads['sidebar_tall'] !!}
+    @else
+        <span class="text-xs font-bold uppercase tracking-widest mb-1">Advertisement</span>
+        <span class="text-center px-4">Sidebar Ad Block<br>(300x400)</span>
+    @endif
+</div>
 
             </div>
-        </div> </div> <div class="w-full mt-12 bg-slate-100 border border-slate-200 rounded-lg py-16 flex flex-col items-center justify-center text-slate-400">
+        </div> </div> <<div class="w-full mt-12 bg-slate-100 border border-slate-200 rounded-lg py-16 flex flex-col items-center justify-center text-slate-400">
+    @if(isset($all_ads['footer_banner']))
+        {!! $all_ads['footer_banner'] !!}
+    @else
         <span class="text-xs font-bold uppercase tracking-widest mb-1">Advertisement</span>
         <span class="text-xl">Leaderboard Banner Ad (728x90)</span>
-    </div>
+    @endif
+</div>
 
 </div>
 @endsection

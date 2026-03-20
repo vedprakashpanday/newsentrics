@@ -7,7 +7,9 @@ use App\Models\News;
 use App\Models\Category;
 use Faker\Factory as Faker;
 use Illuminate\Support\Str;
-
+\App\Models\Ad::create(['slug' => 'header_top', 'location_name' => 'Header Ad (728x90)']);
+\App\Models\Ad::create(['slug' => 'sidebar_right', 'location_name' => 'Sidebar Ad (300x250)']);
+\App\Models\Ad::create(['slug' => 'in_article', 'location_name' => 'In-Article Ad (Responsive)']);
 class NewsSeeder extends Seeder
 {
     public function run()

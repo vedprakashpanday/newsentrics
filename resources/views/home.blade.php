@@ -50,7 +50,7 @@
            <div class="w-full aspect-[16/9] bg-slate-100 overflow-hidden mt-auto">
                 <a href="{{ route('news.show', $heroNews->slug) }}" class="block w-full h-full group">
                     @if($heroNews->image)
-                        <img src="{{ asset('uploads/news/' . $heroNews->image) }}" alt="{{ $heroNews->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <img src="{{ asset('uploads/news/' . $heroNews->image) }}" alt="{{ $heroNews->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
                     @else
                         <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 text-slate-400 group-hover:bg-slate-200 transition duration-500">
                             <svg class="w-16 h-16 mb-3 text-slate-300 group-hover:text-blue-400 group-hover:scale-110 transition duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,10 +105,14 @@
                 </div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 h-[250px] flex flex-col justify-center items-center text-slate-400 p-4 shadow-inner mb-6">
-                <span class="text-[10px] uppercase font-bold tracking-widest mb-2">Advertisement</span>
-                <span class="text-center text-sm font-semibold">Square Ad<br>(300x250)</span>
-            </div>
+           <div class="bg-slate-50 border border-slate-200 h-[250px] flex flex-col justify-center items-center text-slate-400 p-4 shadow-inner mb-6">
+    @if(isset($all_ads['sidebar_square']))
+        {!! $all_ads['sidebar_square'] !!}
+    @else
+        <span class="text-[10px] uppercase font-bold tracking-widest mb-2">Advertisement</span>
+        <span class="text-center text-sm font-semibold">Square Ad<br>(300x250)</span>
+    @endif
+</div>
             
         </div>
     </div>
@@ -117,8 +121,12 @@
 
 <div class="w-full mb-10">
     <div class="bg-slate-50 border border-slate-200 py-6 flex flex-col items-center justify-center text-slate-400 hidden sm:flex">
-        <span class="text-[10px] font-bold uppercase tracking-widest mb-1">Advertisement</span>
-        <span class="text-sm font-semibold">Leaderboard Banner (728x90)</span>
+        @if(isset($all_ads['header_banner']))
+            {!! $all_ads['header_banner'] !!}
+        @else
+            <span class="text-[10px] font-bold uppercase tracking-widest mb-1">Advertisement</span>
+            <span class="text-sm font-semibold">Leaderboard Banner (728x90)</span>
+        @endif
     </div>
 </div>
 
@@ -145,8 +153,12 @@
 
 <div class="w-full mt-10 mb-8">
     <div class="bg-slate-50 border border-slate-200 py-8 flex flex-col items-center justify-center text-slate-400">
-        <span class="text-[10px] font-bold uppercase tracking-widest mb-1">Advertisement</span>
-        <span class="text-lg font-bold text-slate-300">Sponsored Feed Ad</span>
+        @if(isset($all_ads['sponsored_feed']))
+            {!! $all_ads['sponsored_feed'] !!}
+        @else
+            <span class="text-[10px] font-bold uppercase tracking-widest mb-1">Advertisement</span>
+            <span class="text-lg font-bold text-slate-300">Sponsored Feed Ad</span>
+        @endif
     </div>
 </div>
 

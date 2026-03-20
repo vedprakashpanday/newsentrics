@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    
+    <link rel="icon" type="image/png" href="{{ asset('uploads/logo/newsentric.jpg') }}">
     <title>@yield('title', ($site_settings->site_name ?? 'Newsentric') . ' - Global AI News')</title>
     <meta name="description" content="@yield('meta_description', 'Get the latest trending news globally, powered by AI.')">
     <meta name="keywords" content="@yield('meta_keywords', 'news, latest news, global trends, AI news')">
@@ -205,13 +205,13 @@
             <div class="flex flex-col items-start md:items-center">
                 <div class="text-left mt-10">
                     <h4 class="text-slate-900 font-bold mb-5 uppercase tracking-wider text-sm">Quick Links</h4>
-                    <ul class="space-y-3 text-sm text-slate-500 font-medium">
-                        <li><a href="/" class="hover:text-blue-600 transition">Home</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition">About Us</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition">Privacy Policy</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition">Terms & Conditions</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition">Contact Us</a></li>
-                    </ul>
+                   <ul class="space-y-3 text-sm text-slate-500 font-medium">
+    <li><a href="/" class="hover:text-blue-600 transition">Home</a></li>
+    <li><a href="{{ route('page.show', 'about-us') }}" class="hover:text-blue-600 transition">About Us</a></li>
+    <li><a href="{{ route('page.show', 'privacy-policy') }}" class="hover:text-blue-600 transition">Privacy Policy</a></li>
+    <li><a href="{{ route('page.show', 'terms-and-conditions') }}" class="hover:text-blue-600 transition">Terms & Conditions</a></li>
+    <li><a href="{{ route('contact') }}" class="hover:text-blue-600 transition">Contact Us</a></li>
+</ul>
                 </div>
             </div>
 

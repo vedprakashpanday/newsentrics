@@ -35,5 +35,10 @@ class AppServiceProvider extends ServiceProvider
     } catch (\Exception $e) {
         // Migration na chalne par error se bachne ke liye
     }
+
+
+    // Saare active ads ko har view ke sath share karein
+$all_ads = \App\Models\Ad::where('is_active', true)->pluck('ad_code', 'slug');
+View::share('all_ads', $all_ads);
     }
 }
