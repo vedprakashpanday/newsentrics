@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class News extends Model
 {
     //
-   protected $fillable = [
-        'category_id', 'title', 'slug', 'country', 'image', 'content', 'keywords'
-    ];
+  protected $fillable = [
+    'title', 'slug', 'content', 'category_id', 
+    'country', 'status', 'view_count', 'keywords', 'image','source',
+];
 
     // YE NAYA FUNCTION ADD KAREIN
     // Yeh Laravel ko batayega ki ek News ke multiple comments ho sakte hain

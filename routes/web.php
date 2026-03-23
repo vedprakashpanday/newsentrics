@@ -66,4 +66,5 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::delete('/messages/{id}', [AdminContactController::class, 'destroy'])->name('admin.messages.destroy');
 });
 
+Route::get('/api/sidebar-ai', [App\Http\Controllers\FrontendController::class, 'getSidebarAi'])->name('api.sidebar-ai');
 require __DIR__.'/auth.php';

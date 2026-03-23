@@ -3,7 +3,7 @@
 <div class="relative bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition duration-300 group flex flex-col h-full">
     <div class="aspect-video w-full overflow-hidden bg-slate-100 relative">
         @if($news->image)
-            <img src="{{ asset('uploads/news/' . $news->image) }}" alt="{{ $news->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+            <img src="{{  $news->image }}" alt="{{ $news->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
         @else
             <div class="w-full h-full flex items-center justify-center text-slate-400">No Image</div>
         @endif
@@ -20,6 +20,9 @@
             <a href="{{ url('news/' . $news->slug) }}" class="focus:outline-none">
                 <span class="absolute inset-0" aria-hidden="true"></span>
                 {{ $news->title }}
+                <span class="badge bg-secondary" style="font-size: 0.5em; vertical-align: middle;">
+        {{ $news->source }}
+    </span>
             </a>
         </h3>
         

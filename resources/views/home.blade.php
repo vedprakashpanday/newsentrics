@@ -40,7 +40,11 @@
             <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight mb-4 hover:text-blue-600 transition">
                 <a href="{{ route('news.show', $heroNews->slug) }}">
                     {{ $heroNews->title }}
+                    <span class="badge bg-secondary" style="font-size: 0.3em; vertical-align: middle;">
+       <br>(Source: {{ $heroNews->source }} )
+    </span>
                 </a>
+                
             </h1>
             
             <p class="text-slate-600 mb-6 text-base sm:text-lg leading-relaxed line-clamp-3">
@@ -50,7 +54,7 @@
            <div class="w-full aspect-[16/9] bg-slate-100 overflow-hidden mt-auto">
                 <a href="{{ route('news.show', $heroNews->slug) }}" class="block w-full h-full group">
                     @if($heroNews->image)
-                        <img src="{{ asset('uploads/news/' . $heroNews->image) }}" alt="{{ $heroNews->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+                        <img src="{{ $heroNews->image }}" alt="{{ $heroNews->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
                     @else
                         <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 text-slate-400 group-hover:bg-slate-200 transition duration-500">
                             <svg class="w-16 h-16 mb-3 text-slate-300 group-hover:text-blue-400 group-hover:scale-110 transition duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,38 +76,19 @@
                 <div id="live-date" class="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Loading Date...</div>
             </div>
 
-            <div class="bg-white border border-slate-200 p-5 mb-6 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+          <div id="ai-sidebar-wrapper" class="bg-white rounded-xl shadow-sm p-4 mb-6 border border-slate-100">
+    <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+        <i class="bi bi-robot text-blue-600"></i> Today In History
+    </h3>
+    
+    <div id="ai-sidebar-loading" class="py-10 text-center">
+        <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+        <p class="text-xs text-slate-400 mt-2 italic">Gemini is analyzing news...</p>
+    </div>
 
-                <div class="mb-4">
-                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Today in History
-                    </h4>
-                    
-                    <div id="ai-history-loader" class="animate-pulse flex flex-col gap-2">
-                        <div class="h-3 bg-slate-200 w-3/4"></div>
-                        <div class="h-2 bg-slate-200 w-full"></div>
-                        <div class="h-2 bg-slate-200 w-5/6"></div>
-                    </div>
-                    
-                    <div id="ai-history-content" class="hidden">
-                        <h5 id="history-title" class="font-bold text-slate-800 text-sm mb-1 leading-snug"></h5>
-                        <p id="history-info" class="text-xs text-slate-600 leading-relaxed"></p>
-                    </div>
-                </div>
-
-                <hr class="border-slate-100 mb-4">
-
-                <div>
-                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                        AI Insight
-                    </h4>
-                    <div id="ai-quote-loader" class="animate-pulse h-8 bg-slate-200 w-full"></div>
-                    <p id="ai-quote-content" class="hidden text-sm font-semibold text-slate-700 italic border-l-2 border-blue-500 pl-3 py-1"></p>
-                </div>
-            </div>
+    
+    <div id="ai-sidebar-content"></div>
+</div>
 
            <div class="bg-slate-50 border border-slate-200 h-[250px] flex flex-col justify-center items-center text-slate-400 p-4 shadow-inner mb-6">
     @if(isset($all_ads['sidebar_square']))
@@ -240,25 +225,27 @@
         // 4. BACKGROUND AI WIDGET FETCH
         let userCountry = "{{ $country }}"; 
         
+          setTimeout(function() {
         $.ajax({
-            url: "/api/sidebar-ai",
+            url: "{{ route('api.sidebar-ai') }}", 
             type: "GET",
-            data: { country: userCountry },
-            success: function(response) {
-                $('#ai-history-loader, #ai-quote-loader').hide();
-                $('#history-title').text(response.history_title);
-                $('#history-info').text(response.history_info);
-                $('#ai-quote-content').text(response.quote);
-                $('#ai-history-content, #ai-quote-content').fadeIn('slow').removeClass('hidden');
+            data: { 
+                country: "{{ $country ?? 'India' }}",
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(html) {
+                $('#ai-sidebar-loading').fadeOut(300, function() {
+                    $('#ai-sidebar-content').html(html).fadeIn(500);
+                });
             },
             error: function() {
-                $('#ai-history-loader, #ai-quote-loader').hide();
-                $('#history-title').text("Today in History");
-                $('#history-info').text("Unable to load live AI insights right now.");
-                $('#ai-history-content').fadeIn('slow').removeClass('hidden');
+                $('#ai-sidebar-wrapper').hide(); // Agar error aaye toh dabba gayab
             }
         });
+    }, 800);
         
     });
+
+    
 </script>
 @endpush
