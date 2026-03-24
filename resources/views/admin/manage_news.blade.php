@@ -73,10 +73,10 @@
                             <td><span class="badge bg-dark border">{{ $news->country }}</span></td>
                             <td>
                                 <div class="btn-group shadow-sm">
-                                    <a href="{{ route('news.edit', $news->id) }}" class="btn btn-primary btn-sm me-2" title="Edit">
+                                    <a href="{{ route('admin.news.edit', $news->id) }}" class="btn btn-primary btn-sm me-2" title="Edit">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
-                                    <form action="{{ route('news.destroy', $news->id) }}" method="POST" onsubmit="return confirm('Pakka delete karna hai? Yeh action undo nahi hoga!')" style="display:inline;">
+                                    <form action="{{ route('admin.news.destroy', $news->id) }}" method="POST" onsubmit="return confirm('Pakka delete karna hai? Yeh action undo nahi hoga!')" style="display:inline;">
                                         @csrf 
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm" title="Delete">
@@ -111,7 +111,7 @@
             });
 
             // Mobile friendly Add button
-            var addButton = '<a href="{{ route('news.create') }}" class="btn btn-primary btn-sm fw-bold shadow-sm ms-2"><i class="bi bi-plus-circle me-1 d-none d-sm-inline"></i> Add News</a>';
+            var addButton = '<a href="{{ route('admin.news.create') }}" class="btn btn-primary btn-sm fw-bold shadow-sm ms-2"><i class="bi bi-plus-circle me-1 d-none d-sm-inline"></i> Add News</a>';
             $('#newsTable_filter').append(addButton);
         });
     </script>

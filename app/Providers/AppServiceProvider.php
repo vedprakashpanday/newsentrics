@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View; // NAYA IMPORT
 use App\Models\Category; // NAYA IMPORT
 
+
+
 use App\Models\Setting; // Ise bhi top par add karein
 
 class AppServiceProvider extends ServiceProvider

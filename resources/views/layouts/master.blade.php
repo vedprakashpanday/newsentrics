@@ -9,8 +9,15 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    
     
     <style>
+
+
         /* Base Styling */
         body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #f4f6f9; overflow-x: hidden; }
         
@@ -62,90 +69,81 @@
                 <span>Newsentric <sup class="text-primary small">Admin</sup></span>
             </div>
 
-            <ul class="nav flex-column mt-3">
-                <li class="nav-item">
-                    <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                        <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
-                    </a>
-                </li>
+           <ul class="nav flex-column mt-3">
+    
+    <li class="nav-item">
+        <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
+        </a>
+    </li>
 
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('admin/news*') ? 'active' : 'collapsed' }} d-flex justify-content-between align-items-center" 
-                       href="#collapsePosts" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->is('admin/news*') ? 'true' : 'false' }}">
-                        <div><i class="bi bi-journal-text me-2"></i> Posts</div>
-                        <i class="bi bi-chevron-down small transition-transform" style="{{ request()->is('admin/news*') ? 'transform: rotate(180deg);' : '' }}"></i>
-                    </a>
-                    
-                    <div class="collapse {{ request()->is('admin/news*') ? 'show' : '' }}" id="collapsePosts">
-                        <div class="collapse-inner">
-                            <a class="collapse-item {{ request()->routeIs('news.create') ? 'active fw-bold' : '' }}" href="{{ route('news.create') }}">
-                                <i class="bi bi-plus-circle me-1"></i> Add News
-                            </a>
-                            <a class="collapse-item {{ request()->routeIs('news.manage') ? 'active fw-bold' : '' }}" href="{{ route('news.manage') }}">
-                                <i class="bi bi-list-task me-1"></i> Manage News
-                            </a>
-                        </div>
-                    </div>
-                </li>
-
-                <li class="nav-item">
-    <a class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}" href="{{ route('categories.index') }}">
-        <i class="bi bi-tags me-2"></i> Categories
-    </a>
-</li>
-
-<li class="nav-item">
-    <a class="nav-link {{ request()->is('admin/messages*') ? 'active' : '' }}" href="{{ route('admin.messages.index') }}">
-        <i class="bi bi-envelope-fill me-2"></i> Messages
-        @php $msgCount = \App\Models\Contact::count(); @endphp
-        @if($msgCount > 0)
-            <span class="badge bg-primary float-end">{{ $msgCount }}</span>
-        @endif
-    </a>
-</li>
-
-
-<li class="nav-item">
-    <a class="nav-link {{ request()->is('admin/comments*') ? 'active' : '' }}" href="{{ route('admin.comments.index') }}">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <i class="bi bi-chat-left-dots-fill me-2"></i> 
-                Comments
-            </div>
-            {{-- Ek chota sa badge jo dikhayega ki kitne comments Pending hain --}}
-            @php
-                $pendingCount = \App\Models\Comment::where('status', 0)->count();
-            @endphp
-            @if($pendingCount > 0)
-                <span class="badge rounded-pill bg-danger" style="font-size: 0.7rem;">
-                    {{ $pendingCount }}
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('admin/news*') ? 'active' : 'collapsed' }} d-flex justify-content-between align-items-center" 
+           href="#collapsePosts" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->is('admin/news*') ? 'true' : 'false' }}">
+            <div><i class="bi bi-journal-text me-2"></i> Posts</div>
+            <i class="bi bi-chevron-down small transition-transform" style="{{ request()->is('admin/news*') ? 'transform: rotate(180deg);' : '' }}"></i>
+        </a>
+        
+        <div class="collapse {{ request()->is('admin/news*') ? 'show' : '' }}" id="collapsePosts">
+            <div class="collapse-inner ps-3 mt-2">
+                <a class="nav-link py-1 {{ request()->routeIs('admin.news.create') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.news.create') }}">
+                    <i class="bi bi-plus-circle me-1"></i> Add Manual News
                 </a>
-            @endif
+                <a class="nav-link py-1 {{ request()->routeIs('admin.news.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.news.index') }}">
+                    <i class="bi bi-inbox me-1"></i> Fetched News
+                    @php $pendingNewsCount = \App\Models\News::where('status', 0)->count(); @endphp
+                    @if($pendingNewsCount > 0)
+                        <span class="badge bg-warning text-dark ms-1">{{ $pendingNewsCount }}</span>
+                    @endif
+                </a>
+                <a class="nav-link py-1 {{ request()->routeIs('admin.news.manage') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.news.manage') }}">
+                    <i class="bi bi-list-task me-1"></i> Manage All News
+                </a>
+            </div>
         </div>
-    </a>
-</li>
+    </li>
 
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
+            <i class="bi bi-tags me-2"></i> Categories
+        </a>
+    </li>
 
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('admin/comments*') ? 'active' : '' }}" href="{{ route('admin.comments.index') }}">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div>
+                    <i class="bi bi-chat-left-dots-fill me-2"></i> Comments
+                </div>
+                @php $pendingCount = \App\Models\Comment::where('status', 0)->count(); @endphp
+                @if($pendingCount > 0)
+                    <span class="badge rounded-pill bg-danger" style="font-size: 0.7rem;">
+                        {{ $pendingCount }}
+                    </span>
+                @endif
+            </div>
+        </a>
+    </li>
 
-<li class="nav-item">
-    <a class="nav-link" href="{{ route('pages.index') }}">
-        <i class="bi bi-file-earmark-text"></i>
-        <span>Manage Pages</span>
-    </a>
-</li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}" href="{{ route('admin.pages.index') }}">
+            <i class="bi bi-file-earmark-text me-2"></i> Manage Pages
+        </a>
+    </li>
 
-  <li class="nav-item">
-    <a class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}" href="{{ route('admin.settings.index') }}">
-        <i class="bi bi-gear"></i> Settings
-    </a>
-</li>
+    <li class="nav-item">
+        <a href="{{ route('admin.trending') }}" class="nav-link {{ request()->routeIs('admin.trending') ? 'active' : '' }}">
+            <i class="bi bi-graph-up-arrow me-2"></i> Trending News
+        </a>
+    </li>
 
-                <li class="nav-item">
-                    <a href="{{ route('admin.trending') }}" class="nav-link {{ request()->routeIs('admin.trending') ? 'active' : '' }}">
-                        <i class="bi bi-graph-up-arrow me-2"></i> Trending News
-                    </a>
-                </li>
-            </ul>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}" href="{{ route('admin.settings.index') }}">
+            <i class="bi bi-gear me-2"></i> Settings
+        </a>
+    </li>
+
+</ul>
         </nav>
 
         <div id="content">
@@ -192,7 +190,7 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function () {
             // Toggle sidebar

@@ -9,7 +9,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3">
                     <h5 class="mb-0 fs-6 fs-md-5"><i class="bi bi-pencil-square"></i> Edit News Article</h5>
-                    <a href="{{ route('news.manage') }}" class="btn btn-outline-light btn-sm text-nowrap">Back to List</a>
+                    <a href="{{ route('admin.news.manage') }}" class="btn btn-outline-light btn-sm text-nowrap">Back to List</a>
                 </div>
                 
                 <div class="card-body bg-light p-3 p-md-4">
@@ -36,7 +36,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
 
-                    <form action="{{ route('news.update', $news->id) }}" method="POST" enctype="multipart/form-data" id="newsForm">
+                    <form action="{{ route('admin.news.update', $news->id) }}" method="POST" enctype="multipart/form-data" id="newsForm">
                         @csrf
                         @method('PUT')
                         

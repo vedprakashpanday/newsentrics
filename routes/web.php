@@ -36,34 +36,48 @@ Route::middleware(['auth', 'verified'])->group(function () {
  })->name('admin.home');
 
 // --- ADMIN ROUTES (Protected by 'auth' and 'admin' middleware) ---
-Route::middleware(['auth'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
-    // News Management
+    // Ab ye route automatic 'admin.dashboard' kehlayega
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // News Management (Ab har jagah se 'admin.' hata diya gaya hai)
     Route::get('/news/manage', [NewsController::class, 'index'])->name('news.manage');
+    Route::get('/news', [NewsController::class, 'adminIndex'])->name('news.index');
     Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
     Route::post('/news/store', [NewsController::class, 'store'])->name('news.store');
     Route::get('/news/{id}/edit', [NewsController::class, 'edit'])->name('news.edit');
     Route::put('/news/{id}', [NewsController::class, 'update'])->name('news.update');
     Route::delete('/news/{id}', [NewsController::class, 'destroy'])->name('news.destroy');
-    Route::post('/generate-ai', [NewsController::class, 'generateAIContent'])->name('admin.generate.ai');
-    Route::get('/trending', function () { return view('admin.trending'); })->name('admin.trending');
+    Route::get('/news/{id}/ai-edit', [NewsController::class, 'aiEdit'])->name('news.ai_edit');
+    Route::put('/news/{id}/ai-update', [NewsController::class, 'aiUpdate'])->name('news.ai_update'); 
+
+    // Yahan se URL se extra '/admin' hata diya gaya hai
+    Route::post('/news/{id}/approve', [NewsController::class, 'approve'])->name('news.approve');
+    Route::post('/news/{id}/reject', [NewsController::class, 'reject'])->name('news.reject');
+    
+    Route::post('/generate-ai', [NewsController::class, 'generateAIContent'])->name('generate.ai');
+   
+Route::post('/generate-fetched-ai', [NewsController::class, 'expandFetchedNewsWithAi'])->name('generate_fetched.ai');
+    Route::get('/trending', function () { return view('admin.trending'); })->name('trending');
 
     // Categories, Pages, Comments, Ads
+    // Note: resource routes auto-name hote hain, 'admin.' unme lag jayega (e.g., admin.categories.index)
     Route::resource('categories', CategoryController::class);
     Route::resource('pages', PageController::class)->except(['show']);
-    Route::get('/comments', [CommentController::class, 'adminIndex'])->name('admin.comments.index');
-    Route::patch('/comments/{id}/approve', [CommentController::class, 'approve'])->name('admin.comments.approve');
-    Route::delete('/comments/{id}', [CommentController::class, 'adminDestroy'])->name('admin.comments.destroy');
     
-    Route::get('/ads', [AdController::class, 'index'])->name('admin.ads.index');
-    Route::post('/ads/{id}', [AdController::class, 'update'])->name('admin.ads.update');
+    Route::get('/comments', [CommentController::class, 'adminIndex'])->name('comments.index');
+    Route::patch('/comments/{id}/approve', [CommentController::class, 'approve'])->name('comments.approve');
+    Route::delete('/comments/{id}', [CommentController::class, 'adminDestroy'])->name('comments.destroy');
     
-    Route::get('/settings', [SettingController::class, 'index'])->name('admin.settings.index');
-    Route::post('/settings', [SettingController::class, 'update'])->name('admin.settings.update');
+    Route::get('/ads', [AdController::class, 'index'])->name('ads.index');
+    Route::post('/ads/{id}', [AdController::class, 'update'])->name('ads.update');
+    
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
-    Route::get('/messages', [AdminContactController::class, 'index'])->name('admin.messages.index');
-    Route::delete('/messages/{id}', [AdminContactController::class, 'destroy'])->name('admin.messages.destroy');
+    Route::get('/messages', [AdminContactController::class, 'index'])->name('messages.index');
+    Route::delete('/messages/{id}', [AdminContactController::class, 'destroy'])->name('messages.destroy');
 });
 
 Route::get('/api/sidebar-ai', [App\Http\Controllers\FrontendController::class, 'getSidebarAi'])->name('api.sidebar-ai');

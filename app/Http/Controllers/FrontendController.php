@@ -19,7 +19,8 @@ class FrontendController extends Controller
         // Cookie se country uthao, warna request se, warna default India
         $country = $request->cookie('user_country') ?? $request->country ?? 'India';
         
-        $query = News::where('country', $country);
+        // 🟢 NAYA BADLAV: Sirf wahi news laao jinka status 1 (Published) ho
+        $query = News::where('country', $country)->where('status', 1);
 
         // Cloning the query to avoid filter conflicts
         $heroNews = (clone $query)->latest()->first();
@@ -145,8 +146,6 @@ class FrontendController extends Controller
         return back()->with('success', 'Thank you! Your message has been received.');
     }
 
-    // resources/app/Http/Controllers/FrontendController.php mein add karein
-
 public function category(Request $request, $slug)
 {
     // 1. Slug se category dhundo
@@ -161,7 +160,9 @@ public function category(Request $request, $slug)
     if ($request->ajax()) {
         $type = $request->type;
         $skip = $request->skip;
-        $query = News::where('category_id', $category->id);
+        
+        // 🟢 NAYA: AJAX request mein sirf published news (status 1)
+        $query = News::where('category_id', $category->id)->where('status', 1);
 
         if ($type == 'local') {
             $query->where('country', $userCountry);
@@ -178,12 +179,28 @@ public function category(Request $request, $slug)
     }
 
     if ($isWorldCategory) {
-        $worldNews = News::where('country', '!=', $userCountry)->latest()->paginate(12);
+        // 🟢 NAYA: World category page par sirf published news
+        $worldNews = News::where('country', '!=', $userCountry)
+                        ->where('status', 1)
+                        ->latest()
+                        ->paginate(12);
         return view('category-world', compact('category', 'worldNews', 'userCountry'));
     }
 
-    $localNews = News::where('category_id', $category->id)->where('country', $userCountry)->latest()->take(8)->get();
-    $worldNews = News::where('category_id', $category->id)->where('country', '!=', $userCountry)->latest()->take(4)->get();
+    // 🟢 NAYA: Normal category page par Local aur World dono mein sirf published news
+    $localNews = News::where('category_id', $category->id)
+                    ->where('country', $userCountry)
+                    ->where('status', 1)
+                    ->latest()
+                    ->take(8)
+                    ->get();
+                    
+    $worldNews = News::where('category_id', $category->id)
+                    ->where('country', '!=', $userCountry)
+                    ->where('status', 1)
+                    ->latest()
+                    ->take(4)
+                    ->get();
 
     return view('category', compact('category', 'localNews', 'worldNews', 'userCountry'));
 }

@@ -11,6 +11,164 @@ use Illuminate\Support\Facades\Log;
 
 class NewsController extends Controller
 {
+
+public function adminIndex() {
+    $news = News::orderBy('created_at', 'desc')->paginate(20);
+    return view('admin.news.index', compact('news'));
+}
+
+public function approve($id) {
+    News::where('id', $id)->update(['status' => 1]);
+    return back()->with('success', 'News Published successfully!');
+}
+
+public function reject($id) {
+    News::where('id', $id)->update(['status' => 2]); // Status 2 means rejected
+    return back()->with('error', 'News Rejected!');
+}
+
+// Naya function add karein:
+public function aiEdit($id)
+{
+    $news = News::findOrFail($id);
+    $categories = Category::all();
+    
+    // Agar status pehle se published hai, toh maybe you want to show a warning, 
+    // par abhi ke liye directly view return kar dete hain.
+    return view('admin.news.ai_edit', compact('news', 'categories'));
+}
+
+public function aiUpdate(Request $request, $id)
+{
+    $news = News::findOrFail($id);
+
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'category_id' => 'required|exists:categories,id',
+        'content' => 'required',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        'keywords' => 'nullable|string'
+    ]);
+
+    $imageName = $news->image; // Default purani image
+
+    // 🟢 CASE 1: User ne "Remove Image" Checkbox tick kiya hai
+    if ($request->has('remove_image') && $request->remove_image == 1) {
+        // Agar local file hai toh delete karo
+        if ($news->image && !Str::startsWith($news->image, 'http') && file_exists(public_path('uploads/news/' . $news->image))) {
+            unlink(public_path('uploads/news/' . $news->image));
+        }
+        $imageName = null; // Database se bhi hata do
+    }
+
+    // 🟢 CASE 2: User ne nayi File Upload ki hai (Ye purani ko auto-replace kar dega)
+    if ($request->hasFile('image')) {
+        
+        // Agar purani image (jo local hai) exist karti hai toh usko udhao
+        if ($news->image && !Str::startsWith($news->image, 'http') && file_exists(public_path('uploads/news/' . $news->image))) {
+            unlink(public_path('uploads/news/' . $news->image));
+        }
+
+        $image = $request->file('image');
+        $imageName = time() . '-' . uniqid() . '.webp'; 
+        $destinationPath = public_path('uploads/news');
+
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0755, true);
+        }
+
+        $img = imagecreatefromstring(file_get_contents($image->getRealPath()));
+        imagepalettetotruecolor($img);
+        imagealphablending($img, true);
+        imagesavealpha($img, true);
+        imagewebp($img, $destinationPath . '/' . $imageName, 80);
+        imagedestroy($img);
+    }
+
+    // Database Update karo
+    $news->update([
+        'category_id' => $request->category_id,
+        'title' => $request->title,
+        'image' => $imageName, 
+        'content' => $request->content,
+        'keywords' => $request->keywords,
+        'status' => 1, // Seedha Publish
+    ]);
+
+    return redirect()->route('admin.news.index')->with('success', 'AI News updated & Published successfully!');
+}
+
+
+public function expandFetchedNewsWithAi(Request $request) 
+    {
+        try {
+            $title = $request->title ?? '';
+            $rssSnippet = $request->content ?? ''; // Ye RSS se aaya hua HTML/text hai
+            $country = $request->country ?? 'Global';
+            
+            $apiKey = trim(env('GEMINI_API_KEY')); 
+
+            if (empty($apiKey)) {
+                return response()->json(['success' => false, 'message' => 'API Key is missing in .env file!']);
+            }
+
+            // Using gemini-1.5-flash as it is highly stable and fast for this task
+             $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
+
+            // 🟢 NAYA PROMPT: Specifically designed for RSS Snippets
+            $prompt = "Act as an expert, professional news editor and journalist. I am providing you with a headline and a brief RSS feed snippet (which may contain HTML tags or links). 
+            Your job is to understand the context from this snippet and write a comprehensive, engaging, and original news article strictly in English. Ignore any raw HTML links from the snippet.
+
+            Target Audience Country: {$country}
+            News Headline: {$title}
+            RSS Snippet/Context: {$rssSnippet}
+
+            Output STRICTLY a valid JSON object with EXACTLY these three keys:
+            - \"title\": A catchy, professional, SEO-friendly headline (Max 100 characters). You can improve the original one.
+            - \"content\": The detailed, well-structured news article body. Write at least 3-4 professional paragraphs (around 300 words). Use HTML tags like <p>, <br>, or <strong> for formatting. Keep it clean and ready to publish.
+            - \"keywords\": A comma-separated list of the 5-8 best SEO keywords based on the article.";
+
+            $response = \Illuminate\Support\Facades\Http::withoutVerifying()
+                ->withHeaders(['Content-Type' => 'application/json'])
+                ->post($url, [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]]
+                    ],
+                    'generationConfig' => [
+                        'responseMimeType' => 'application/json',
+                    ]
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $aiJsonResponseString = $data['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
+                
+                $parsedData = json_decode($aiJsonResponseString, true);
+
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    return response()->json(array_merge(['success' => true], $parsedData));
+                } else {
+                    return response()->json(['success' => false, 'message' => 'AI returned invalid JSON format.']);
+                }
+            }
+            
+            $errorData = $response->json();
+            $googleError = $errorData['error']['message'] ?? $response->body();
+
+            return response()->json([
+                'success' => false, 
+                'message' => 'Google API Error: ' . $googleError
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Server Error: ' . $e->getMessage()]);
+        }
+    }
+
+
+
+
+
     public function trending(Request $request)
 {
     $country = $request->input('country', 'IN');
@@ -191,7 +349,13 @@ public function create()
 
 public function index()
 {
-    $allNews = \App\Models\News::with('category')->latest()->get();
+    // Sirf Published (status: 1) news layega
+    // Pagination DataTables khud handle karega, isliye yahan sirf get() use karenge
+    $allNews = \App\Models\News::with('category')
+                ->where('status', 1)
+                ->latest()
+                ->get(); 
+                
     return view('admin.manage_news', compact('allNews'));
 }
 
@@ -257,7 +421,7 @@ public function edit($id)
             'keywords' => $request->keywords,
         ]);
 
-        return redirect()->route('news.manage')->with('success', 'News updated successfully!');
+        return redirect()->route('admin.news.manage')->with('success', 'News updated successfully!');
     }
 
     public function destroy($id)
@@ -272,6 +436,6 @@ public function edit($id)
         // 🔴 Fir database se news delete karo
         $news->delete();
 
-        return redirect()->route('news.manage')->with('success', 'News and its image deleted successfully!');
+        return redirect()->route('admin.news.manage')->with('success', 'News and its image deleted successfully!');
     }
 }

@@ -54,7 +54,7 @@
            <div class="w-full aspect-[16/9] bg-slate-100 overflow-hidden mt-auto">
                 <a href="{{ route('news.show', $heroNews->slug) }}" class="block w-full h-full group">
                     @if($heroNews->image)
-                        <img src="{{ $heroNews->image }}" alt="{{ $heroNews->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+                        <img src="{{ asset('uploads/news/' . $heroNews->image) }}" alt="{{ $heroNews->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
                     @else
                         <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 text-slate-400 group-hover:bg-slate-200 transition duration-500">
                             <svg class="w-16 h-16 mb-3 text-slate-300 group-hover:text-blue-400 group-hover:scale-110 transition duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

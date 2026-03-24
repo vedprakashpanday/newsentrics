@@ -47,7 +47,7 @@
 
             @if($news->image)
                 <div class="w-full aspect-video mb-8 overflow-hidden rounded-xl shadow-sm bg-slate-100">
-                    <img src="{{  $news->image }}" alt="{{ $news->title }}" class="w-full h-full object-cover">
+                    <img src="{{ asset('uploads/news/' . $news->image) }}" alt="{{ $news->title }}" class="w-full h-full object-cover">
                 </div>
             @endif
 
@@ -170,7 +170,7 @@
                         <a href="{{ route('news.show', $related->slug) }}" class="group flex gap-3 items-start">
                             <div class="w-24 h-20 flex-shrink-0 overflow-hidden rounded bg-slate-200">
                                 @if($related->image)
-                                    <img src="{{  $related->image }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                                    <img src="{{  asset('uploads/news/'.$related->image) }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
                                 @endif
                             </div>
                             <div>
